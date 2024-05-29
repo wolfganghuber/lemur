@@ -123,6 +123,12 @@ find_de_neighborhoods <- function(fit,
          null_confounded_neighborhoods.normal_quantile = 0.99,
          merge_indices_columns = NA)
 
+  if(! skip_independent_test){
+    group_by <- add_design_variables_to_group_by({{group_by}}, design = fit$design, alignment_design = fit$alignment_design)
+    # Check if the group_by creates a valid design matrix
+
+  }
+
   test_data <- handle_test_data_parameter(fit, test_data, test_data_col_data, continuous_assay_name)
   if(nrow(fit) != nrow(test_data)){
     stop("The number of features in 'fit' and 'independent_data' differ.")
@@ -750,4 +756,18 @@ null_confounded_neighborhoods <- function(embedding, indices, contrast, design, 
     attr(indices, "is_neighborhood_confounded") <- skip
   }
   indices
+}
+
+
+add_design_variables_to_group_by <- function(group_by, design, alignment_design = NULL){
+  if(!is.null(design) && ! is.null(attr(design, "xlevels"))){
+    design_variables <- names(attr(design, "xlevels"))
+  }else{
+    design_variables <- character(0L)
+  }
+  if(!is.null(alignment_design) && ! is.null(attr(alignment_design, "xlevels"))){
+    design_variables <- union(design_variables, names(attr(alignment_design, "xlevels")))
+  }
+  design_variables_quos <- lapply(rlang::syms(design_variables), \(s) rlang::as_quosure(s, rlang::empty_env()))
+  c(group_by, design_variables_quos)
 }

@@ -268,6 +268,24 @@ test_that("find_de_neighborhoods works", {
                de_neigh5[,c("name", "neighborhood", "n_cells", "sel_statistic")])
 })
 
+test_that("find_de_neighborhoods works with a minimal set of group_by", {
+  dat <- make_synthetic_data(n_centers = 10, n_genes = 50)
+  assay(dat, "counts", withDimnames = FALSE) <- array(rpois(prod(dim(dat)), lambda = 7), dim = dim(dat))
+  dat$individual <- sample(paste0("pat_", seq_len(4)), size = ncol(dat), replace = TRUE)
+
+  fit <- lemur(dat, ~ condition + individual, n_embedding = 15, verbose = FALSE)
+  fit <- test_de(fit, contrast = cond(condition = "a") - cond(condition = "b"))
+  set.seed(1)
+  res1 <- find_de_neighborhoods(fit, group_by = vars(individual, condition), verbose = FALSE)
+  set.seed(1)
+  res2 <- find_de_neighborhoods(fit, group_by = vars(individual), verbose = FALSE)
+  set.seed(1)
+  res3 <- find_de_neighborhoods(fit, group_by = vars(), verbose = FALSE)
+  expect_error(find_de_neighborhoods(fit, verbose = FALSE))
+  expect_equal(res1, res2)
+  expect_equal(res1, res3)
+})
+
 
 test_that("find_de_neighborhoods works with subset", {
   dat <- make_synthetic_data(n_centers = 10, n_genes = 50)
