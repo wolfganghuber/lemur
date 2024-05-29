@@ -1,4 +1,9 @@
-# v1.1 (devel)
+# v1.3
+
+* `lemur` now automatically inserts the variables from the design formula into
+the `group_by` argument for `find_de_neighborhoods`. (thanks Katha for pushing for this feature)
+
+# v1.1
 
 * Make `predict` function faster and less memory intensive for subset fits.
 * Speed-up internal function `get_groups`
@@ -6,7 +11,7 @@
 * Give better error message in `test_de` if `cond(..)` is used for a fit
 that was not specified with a design formula (thanks @MaximilianNuber for reporting)
 
-# v1.0 (release)
+# v1.0
 
 * Bug fix in subsetting logic affecting `predict` and `test_de`. The problem occured if a `fit` object was
 subsetted with indices or gene names and the order changed, and resulted in a wrong order of the predictions.
