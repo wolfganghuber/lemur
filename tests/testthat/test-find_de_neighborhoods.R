@@ -275,6 +275,7 @@ test_that("find_de_neighborhoods works with a minimal set of group_by", {
 
   fit <- lemur(dat, ~ condition + individual, n_embedding = 15, verbose = FALSE)
   fit <- test_de(fit, contrast = cond(condition = "a") - cond(condition = "b"))
+
   set.seed(1)
   res1 <- find_de_neighborhoods(fit, group_by = vars(individual, condition), verbose = FALSE)
   set.seed(1)

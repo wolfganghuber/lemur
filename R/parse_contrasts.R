@@ -80,7 +80,6 @@ create_contrast_data_mask <- function(formula){
   if(any(duplicated(names(level_sets)))){
     stop("All arguments to 'cond()' must be unique.")
   }
-
   covar <- all.vars(formula)
   new_dat <- as.list(rep(0, length(covar)))
   names(new_dat) <- covar
