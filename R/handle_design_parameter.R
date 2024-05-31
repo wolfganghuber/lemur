@@ -26,6 +26,7 @@ handle_design_parameter <- function(design, data, col_data, verbose = FALSE){
     tmp <- convert_formula_to_design_matrix(design, col_data)
     design_matrix <- tmp$design_matrix
     design_formula <- tmp$formula
+    col_data <- add_global_variables_to_col_data(design, col_data)
     attr(design_formula, "constructed_from") <- "formula"
   }else{
     stop("design argment of class ", class(design), " is not supported. Please ",
@@ -80,7 +81,7 @@ handle_design_parameter <- function(design, data, col_data, verbose = FALSE){
 
   rownames(design_matrix) <- colnames(data)
   validate_design_matrix(design_matrix, data)
-  list(design_matrix = design_matrix, design_formula = design_formula)
+  list(design_matrix = design_matrix, design_formula = design_formula, col_data = col_data)
 }
 
 
@@ -90,7 +91,10 @@ convert_formula_to_design_matrix <- function(formula, col_data){
   tryCatch({
     mf <- model.frame(formula, data = col_data, drop.unused.levels = FALSE)
     terms <- attr(mf, "terms")
+    # xlevels is used for reconstructing the model matrix
     attr(terms, "xlevels") <- stats::.getXlevels(terms, mf)
+    # vars_xlevels is used to check input to cond(...)
+    attr(terms, "vars_xlevels") <- xlevels_for_formula_vars(terms, col_data)
     mm <- stats::model.matrix.default(terms, mf)
     attr(terms, "contrasts") <- attr(mm, "contrasts")
   }, error = function(e){
@@ -109,6 +113,53 @@ convert_formula_to_design_matrix <- function(formula, col_data){
   attr(terms, ".Environment") <- c()
   colnames(mm)[colnames(mm) == "(Intercept)"] <- "Intercept"
   list(formula = terms, design_matrix = mm)
+}
+
+add_global_variables_to_col_data <- function(formula, col_data){
+  # Check if var is global and put it into col_data
+  formula_env <- attr(formula, ".Environment")
+  if(is.null(formula_env)) formula_env <- rlang::empty_env()
+  for(gv in setdiff(all.vars(formula), colnames(col_data))){
+    value <- rlang::eval_tidy(rlang::sym(gv), data = NULL, env = formula_env)
+    is_vector_type <- (is(col_data, "DFrame") && is(value, "Vector")) || vctrs::obj_is_vector(value)
+    if(is_vector_type){
+      has_correct_length <- NROW(value) == 1 || NROW(value) == nrow(col_data)
+      if(! has_correct_length){
+        stop("Trying store global variables from formula in colData, however '", gv, "' ",
+             "has length ", NROW(value), ", but it needs to be 1 or nrow(col_data) (", nrow(col_data), ").")
+      }
+    }else{
+      stop("Trying store global variables from formula in colData, however '", gv, "' ",
+           "is of type ",  class(value)[1]," and not a vector-type.")
+    }
+    col_data[[gv]] <- value
+  }
+  col_data
+}
+
+xlevels_for_formula_vars <- function(formula, data){
+  # if(! is.null( attr(formula, "xlevels"))){
+  #   attr(formula, "xlevels")
+  if(! is.null( attr(formula, "vars_xlevels"))){
+    attr(formula, "vars_xlevels")
+  }else{
+    # For all character / factor vars get xlevel
+    all_vars <- all.vars(formula)
+    formula_env <- attr(formula, ".Environment")
+    if(is.null(formula_env)) formula_env <- rlang::empty_env()
+    xlev <- lapply(all_vars, \(v){
+      value <- rlang::eval_tidy(rlang::sym(v), data = as.data.frame(data), env = formula_env)
+      if(is.character(value)){
+        levels(as.factor(value))
+      }else if(is.factor(value)){
+        levels(value)
+      }else{
+        NULL
+      }
+    })
+    names(xlev) <- all_vars
+    xlev[!vapply(xlev, is.null, TRUE)]
+  }
 }
 
 validate_design_matrix <- function(matrix, data){

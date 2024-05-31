@@ -2,6 +2,8 @@
 
 * `lemur` now automatically inserts the variables from the design formula into
 the `group_by` argument for `find_de_neighborhoods`. (thanks Katha for pushing for this feature)
+* The formula parsing automatically detects global variables and adds them to the 
+colData. This avoids problems with the random test / training assignment.
 
 # v1.1
 

@@ -83,7 +83,7 @@ create_contrast_data_mask <- function(formula){
   covar <- all.vars(formula)
   new_dat <- as.list(rep(0, length(covar)))
   names(new_dat) <- covar
-  xlevels <- attr(formula, "xlevels")
+  xlevels <- attr(formula, "vars_xlevels")
   for(n in names(xlevels)){
     new_dat[[n]] <- factor(xlevels[[n]][1], levels = xlevels[[n]])
   }
@@ -104,7 +104,7 @@ create_contrast_data_mask <- function(formula){
       new_dat[[n]] <- level_sets[[n]]
     }
   }
-  res <- drop(model.matrix(formula, new_dat, contrasts.arg = attr(formula, "contrasts")))
+  res <- drop(model.matrix(formula, new_dat, contrasts.arg = attr(formula, "contrasts"), xlev = attr(formula, "xlevels")))
   attr(res, "assign") <- NULL
   attr(res, "contrasts") <- NULL
   class(res) <- "model_vec"

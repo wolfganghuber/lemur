@@ -306,12 +306,86 @@ test_that("subsetting with strings works", {
 test_that("Duplicated columns names are handled gracefully", {
   dat <- make_synthetic_data(n_centers = 10, n_genes = 50)
   colData(dat)  <- cbind(colData(dat), condition = 3)
-  expect_warning({
+  expect_error({
     fit <- lemur(dat, design = ~ condition, verbose = FALSE)
   })
+})
+
+test_that("splines in formula work", {
+  dat <- make_synthetic_data(n_centers = 10, n_genes = 50, n_cells = 1000)
+  colData(dat)$cont <- sample(1:10, size = ncol(dat), replace = TRUE)
+  colData(dat)$cont[42] <- 2
+  colData(dat)$cont[43] <- 5
+  fit <- lemur(dat, design = ~ splines::bs(cont, df = 3), verbose = FALSE)
+  fit$design_matrix[42:43,]
+  cntr1 <- parse_contrast(cond(cont = 2), fit$design, simplify = TRUE)
+  cntr2 <- parse_contrast(cond(cont = 5), fit$design, simplify = TRUE)
+  expect_equal(fit$design_matrix[42,], cntr1, ignore_attr = c("names", "class"))
+  expect_equal(fit$design_matrix[43,], cntr2, ignore_attr = c("names", "class"))
+})
+
+
+test_that("modifying arguments in formula works", {
+  shift_letter <- function(x){
+    stopifnot(all(x %in% letters))
+    map <- c(2:26, 1)
+    names(map) <- letters
+    letters[map[x]]
+  }
+  dat <- make_synthetic_data(n_centers = 10, n_genes = 50)
+  set.seed(1)
+  fit <- lemur(dat, design = ~ shift_letter(condition), verbose = FALSE)
+  # Explicitly set formula back!
+  attr(metadata(fit)[["design"]], ".Environment") <- rlang::current_env()
+  attr(metadata(fit)[["alignment_design"]], ".Environment") <- rlang::current_env()
   fit <- test_de(fit, contrast = cond(condition = "b") - cond(condition = "a"))
+
+  dat$condition_shifted <- shift_letter(dat$condition)
+  set.seed(1)
+  fit_ref <- lemur(dat, design = ~ condition_shifted, verbose = FALSE)
+  fit_ref <- test_de(fit_ref, contrast = cond(condition_shifted = "c") - cond(condition_shifted = "b"))
+  expect_equal(assay(fit, "DE"), assay(fit_ref, "DE"))
+})
+
+
+test_that("global variable in formula work", {
+  dat <- make_synthetic_data(n_centers = 10, n_genes = 50)
+  global_grouping <- sample(c("a", "b"), ncol(dat), replace = TRUE)
+  fit <- lemur(dat, design = ~ global_grouping, verbose = FALSE)
+  expect_equal(as.character(fit$colData$global_grouping), global_grouping)
+
+  fit <- test_de(fit, contrast = cond(global_grouping = "b") - cond(global_grouping = "a"))
+  res <- find_de_neighborhoods(fit, group_by = vars(cell_type), test_method = "limma", verbose = FALSE)
+  expect_true("neighborhood" %in% colnames(res))
+})
+
+
+
+test_that("local variables in formula work", {
+  make_lemur_fnc <- function(){
+    dat <- make_synthetic_data(n_centers = 10, n_genes = 50)
+    global_grouping <- sample(c("a", "b"), ncol(dat), replace = TRUE)
+    fit <- lemur(dat, design = ~ global_grouping, verbose = FALSE)
+    fit
+  }
+  fit <- make_lemur_fnc()
+  fit <- test_de(fit, contrast = cond(global_grouping = "b") - cond(global_grouping = "a"))
   res <- find_de_neighborhoods(fit, group_by = vars(cell_type, condition), test_method = "limma", verbose = FALSE)
   expect_true("neighborhood" %in% colnames(res))
+})
+
+
+test_that("weird variables in formula throw helpful error", {
+  dat <- make_synthetic_data(n_centers = 10, n_genes = 50)
+  global_grouping <- function(arg) dat$condition
+  weird_var <- environment()
+  expect_error(lemur(dat, design = ~ global_grouping(weird_var), verbose = FALSE))
+  expect_error(lemur(dat, design = ~ global_grouping(weird_var), col_data = DataFrame(x = 1:500), verbose = FALSE))
+
+  weird_var <- DataFrame(1:500)
+  expect_error(lemur(dat, design = ~ global_grouping(weird_var), verbose = FALSE))
+  fit <- lemur(dat, design = ~ global_grouping(weird_var), col_data = DataFrame(x = 1:500), verbose = FALSE)
+  expect_true("weird_var" %in% colnames(fit$colData))
 })
 
 

@@ -54,7 +54,9 @@ project_on_lemur_fit <- function(fit, data, col_data = NULL, use_assay = "logcou
   attr(alignment_design, "ignore_degeneracy") <- TRUE
 
   des <- handle_design_parameter(design, data, col_data)
+  col_data <- des$col_data
   al_des <- handle_design_parameter(alignment_design, data, col_data)
+  col_data <- al_des$col_data
   embedding <- project_on_lemur_fit_impl(Y, des$design_matrix, al_des$design_matrix,
                                          fit$coefficients, fit$linear_coefficients, fit$alignment_coefficients,
                                          fit$base_point)

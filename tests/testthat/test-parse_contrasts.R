@@ -134,3 +134,15 @@ test_that("parse_contrast throws appropriate error message", {
   expect_message(handle_design_parameter(matrix(1:10, ncol = 1), data, NULL, verbose = TRUE), "The 'design' was not specified with a formula")
 })
 
+test_that("parse_contrast and handle_design_parameter work", {
+  n_obs <- 50
+  col_data <- data.frame(group = sample(LETTERS[1:3], size = n_obs, replace = TRUE),
+                         cont = rnorm(n_obs),
+                         city = sample(c("New York", "Paris", "London"), size = n_obs, replace = TRUE),
+                         y = rnorm(n_obs),
+                         stringsAsFactors = TRUE)
+  Y <- matrix(0, nrow = 10, ncol = n_obs)
+  des <- handle_design_parameter(data = Y, design = ~ group + cont, col_data = col_data)
+  form <- des$design_formula
+  res <- parse_contrast(cond(group = "B"), form)
+})

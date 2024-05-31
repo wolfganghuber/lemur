@@ -87,7 +87,7 @@ grassmann_lm <- function(data, design, base_point, tangent_regression = FALSE){
 
 
 get_groups <- function (design_matrix) {
-  vctrs::vec_group_id(design_matrix)
+  vctrs::vec_group_id(unclass(design_matrix))
 }
 
 

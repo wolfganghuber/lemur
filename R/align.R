@@ -226,6 +226,7 @@ correct_fit <- function(fit, alignment_coefs, design){
   des <- handle_design_parameter(design, fit, fit$colData)
   metadata(fit)[["alignment_design"]] <- des$design_formula
   metadata(fit)[["alignment_design_matrix"]] <- des$design_matrix
+  colData(fit) <- des$col_data
   reducedDim(fit, "embedding") <- t(apply_linear_transformation(fit$embedding, alignment_coefs, des$design_matrix))
   fit
 }
