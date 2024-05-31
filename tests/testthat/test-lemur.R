@@ -388,6 +388,17 @@ test_that("weird variables in formula throw helpful error", {
   expect_true("weird_var" %in% colnames(fit$colData))
 })
 
+test_that("linear_coefficient_estimator methods work", {
+  dat <- make_synthetic_data(n_centers = 3, n_genes = 50)
+  fit <- lemur(dat, design = ~ condition, verbose = FALSE, linear_coefficient_estimator = "linear", test_fraction = 0)
+  expect_equal(fit$linear_coefficients, t(lm.fit(fit$design_matrix, t(logcounts(dat)))$coefficients) )
+
+  fit <- lemur(dat, design = ~ condition, verbose = FALSE, linear_coefficient_estimator = "zero", test_fraction = 0)
+  expect_equal(fit$linear_coefficients, matrix(0, nrow = nrow(dat), ncol = ncol(fit$design_matrix)) )
+
+  fit <- lemur(dat, design = ~ condition, verbose = FALSE, linear_coefficient_estimator = "mean", test_fraction = 0)
+  expect_equal(fit$linear_coefficients, cbind(rowMeans(logcounts(dat)), matrix(0, nrow = nrow(dat), ncol = 2)), ignore_attr = "dimnames")
+})
 
 test_that("regularization helps", {
 

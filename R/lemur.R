@@ -11,9 +11,10 @@
 #' @param linear_coefficient_estimator specify which estimator is used to center the conditions.
 #'   `"linear"` runs simple regression it works well in many circumstances but can produce poor
 #'   results if the composition of the cell types changes between conditions (e.g., one cell type
-#'   disappears). `"cluster_median"` works similar as `"linear"` but is robust against compositional
-#'   changes. `"zero"` skips the centering step which is also robust against compositional changes.
-#'   However, expression changes affecting all cells equally are not regressed out.
+#'   disappears). `"mean"`, `"cluster_median"` and `"zero"` are alternative estimators, which
+#'   are each supposed to be more robust against compositional changes but cannot account
+#'   for genes that change for all cells between conditions.
+#'   `"linear"` is the default as it works best with subsequent alignment steps.
 #' @param use_assay if `data` is a `SummarizedExperiment` / `SingleCellExperiment` object,
 #'   which assay should be used.
 #' @param test_fraction the fraction of cells that are split of before the model fit to keep an
@@ -42,7 +43,7 @@
 #' @export
 lemur <- function(data, design = ~ 1, col_data = NULL,
                   n_embedding = 15,
-                  linear_coefficient_estimator = c("linear", "cluster_median", "zero"),
+                  linear_coefficient_estimator = c("linear", "mean", "cluster_median", "zero"),
                   use_assay = "logcounts",
                   test_fraction = 0.2,
                   ...,
@@ -116,7 +117,7 @@ lemur <- function(data, design = ~ 1, col_data = NULL,
 lemur_impl <- function(Y, design_matrix,
                        n_embedding = 15,
                        base_point = c("global_embedding", "mean"),
-                       linear_coefficient_estimator = c("linear", "cluster_median", "zero"),
+                       linear_coefficient_estimator = c("linear", "mean", "cluster_median", "zero"),
                        linear_coefficients = NULL,
                        coefficients = NULL,
                        embedding = NULL,

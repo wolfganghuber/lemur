@@ -1,11 +1,21 @@
 
 
-estimate_linear_coefficient <- function(Y, design_matrix, method = c("linear", "cluster_median", "zero")){
+estimate_linear_coefficient <- function(Y, design_matrix, method = c("linear", "mean", "cluster_median", "zero")){
   method <- match.arg(method)
 
   if(method == "linear"){
     linear_fit <- lm.fit(design_matrix, t(Y))
     t(linear_fit$coefficients)
+  }else if(method == "mean"){
+    # Check for intercept column / columns
+    ones <- rep(1, nrow(design_matrix))
+    intercept_fit <- lm.fit(design_matrix, ones)
+    if(! sum(intercept_fit$residuals^2) < 1e-12){
+      stop("The design matrix does not have an intercept. Cannot apply a single mean offset. Please change",
+           "'linear_coefficient_estimator' to 'linear', 'cluster_median', or 'zero'.")
+    }
+    means <- MatrixGenerics::rowMeans2(Y)
+    matrix(means, ncol = 1) %*% matrix(intercept_fit$coefficients, nrow = 1)
   }else if(method == "zero"){
     matrix(0, nrow = nrow(Y), ncol = ncol(design_matrix))
   }else if(method == "cluster_median"){
@@ -28,3 +38,5 @@ estimate_linear_coefficient <- function(Y, design_matrix, method = c("linear", "
     matrix(wmed, nrow = nrow(Y), ncol = ncol(design_matrix))
   }
 }
+
+

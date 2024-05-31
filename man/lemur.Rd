@@ -9,7 +9,7 @@ lemur(
   design = ~1,
   col_data = NULL,
   n_embedding = 15,
-  linear_coefficient_estimator = c("linear", "cluster_median", "zero"),
+  linear_coefficient_estimator = c("linear", "mean", "cluster_median", "zero"),
   use_assay = "logcounts",
   test_fraction = 0.2,
   ...,
@@ -30,9 +30,10 @@ and \code{col_data} argument}
 \item{linear_coefficient_estimator}{specify which estimator is used to center the conditions.
 \code{"linear"} runs simple regression it works well in many circumstances but can produce poor
 results if the composition of the cell types changes between conditions (e.g., one cell type
-disappears). \code{"cluster_median"} works similar as \code{"linear"} but is robust against compositional
-changes. \code{"zero"} skips the centering step which is also robust against compositional changes.
-However, expression changes affecting all cells equally are not regressed out.}
+disappears). \code{"mean"}, \code{"cluster_median"} and \code{"zero"} are alternative estimators, which
+are each supposed to be more robust against compositional changes but cannot account
+for genes that change for all cells between conditions.
+\code{"linear"} is the default as it works best with subsequent alignment steps.}
 
 \item{use_assay}{if \code{data} is a \code{SummarizedExperiment} / \code{SingleCellExperiment} object,
 which assay should be used.}
