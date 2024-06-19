@@ -5,6 +5,7 @@ the `group_by` argument for `find_de_neighborhoods`. (thanks Katha for pushing f
 * The formula parsing automatically detects global variables and adds them to the 
 colData. This avoids problems with the random test / training assignment.
 * Duplicate column names in colData are now longer allowed.
+* Require harmony version >= 1.2.0 (thanks Maija for reporting the problem)
 
 
 # v1.1

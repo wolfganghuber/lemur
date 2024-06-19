@@ -108,7 +108,6 @@ test_that("check that aligning points works perfectly for low number of points",
 
 
 test_that("check that harmony alignment works as expected", {
-  skip("Harmony v1.1.0 has a regression about small input matrices")
   set.seed(1)
   n_genes <- 10
   n_emb <- 2
@@ -127,16 +126,22 @@ test_that("check that harmony alignment works as expected", {
                    alignment_design = NULL, alignment_design_matrix = design_matrix,
                    use_assay = "foo", is_test_data = rep(FALSE, ncol(mat)))
   gr <- rep(seq_len(n_points), times = 2)
-  fit_al2 <- align_harmony(fit, design = fit$alignment_design_matrix, nclust = n_points, ridge_penalty = 1e-3, verbose = FALSE)
+  suppressWarnings({
+    fit_al2 <- align_harmony(fit, design = fit$alignment_design_matrix, nclust = n_points, ridge_penalty = 1e-3, verbose = FALSE)
+  })
   set.seed(1)
-  harm <- t(harmony::RunHarmony(mat, meta_data = df, vars_use = "tmp", nclust = n_points, lambda = 1e-8, verbose = FALSE))
+  suppressWarnings({
+    harm <- t(harmony::RunHarmony(mat, meta_data = df, vars_use = "tmp", nclust = n_points, lambda = 1e-8, verbose = FALSE))
+  })
 
   expect_equal(fit_al2$embedding[,df$tmp == "a"], fit_al2$embedding[,df$tmp == "b"], tolerance = 1e-2)
   expect_equal(harm[,df$tmp == "a"], harm[,df$tmp == "b"], tolerance = 1e-2)
 
   # Reimplement harmony correction
   set.seed(1)
-  harm_obj <- harmony_init(mat, design_matrix, nclust = n_points, lambda = 1e-8, verbose = FALSE)
+  suppressWarnings({
+    harm_obj <- harmony_init(mat, design_matrix, nclust = n_points, lambda = 1e-8, verbose = FALSE)
+  })
   harm_obj <- harmony_max_div_clustering(harm_obj)
   Z_corr <- harm_obj$Z_orig
   for(k in seq_len(harm_obj$K)){
