@@ -68,12 +68,13 @@ grassmann_lm <- function(data, design, base_point, tangent_regression = FALSE){
 
   # Initialize with tangent regression
   mm_groups <- get_groups(design)
-  if(any(table(mm_groups) < n_emb)){
-    stop("Too few datapoints in some design matrix group.\n",
-         "This error could be removed, but this feature hasn't been implemented yet.")
-  }
   groups <- unique(mm_groups)
   reduced_design <- mply_dbl(groups, \(gr) design[which(mm_groups == gr)[1],], ncol = ncol(design))
+  if(any(table(mm_groups) < n_emb)){
+    problematic_mat <- cbind(n_occurrences = c(table(mm_groups)), reduced_design)
+    stop("Too few datapoints in some design matrix group.\n\n", glmGamPoi:::format_matrix(problematic_mat),
+         "\nEach row must occurr at least n_embedding=", n_emb, " times.\n")
+  }
   group_planes <- lapply(groups, \(gr) pca(data[,mm_groups == gr,drop=FALSE], n = n_emb, center = FALSE)$coordsystem)
   group_sizes <- vapply(groups, \(gr) sum(mm_groups == gr), FUN.VALUE = 0L)
   coef <- grassmann_geodesic_regression(group_planes, design = reduced_design, base_point = base_point, weights = group_sizes, tangent_regression = TRUE)

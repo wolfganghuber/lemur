@@ -41,6 +41,18 @@ test_that("grassmann_lm works", {
   expect_equal(fit[,,"xb"], grassmann_log(base_point, plane_b) - grassmann_log(base_point, plane_a))
 })
 
+test_that("grassmann_lm throws a helpful error message", {
+  n_obs <- 100
+  data <- randn(5, n_obs)
+  col_data <- data.frame(x = sample(letters[1:3], size = n_obs, replace = TRUE))
+  col_data$x[1] <- "new_element"
+  des <- model.matrix(~ x, col_data)
+  base_point <- qr.Q(qr(randn(5, 2)))
+  expect_error({
+    fit <- grassmann_lm(data, des, base_point)
+  })
+})
+
 
 test_that("get_groups works and is fast", {
   df <- data.frame(let = sample(letters[1:2], size = 100, replace = TRUE),
