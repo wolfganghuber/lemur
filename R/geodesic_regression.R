@@ -71,8 +71,12 @@ grassmann_lm <- function(data, design, base_point, tangent_regression = FALSE){
   groups <- unique(mm_groups)
   reduced_design <- mply_dbl(groups, \(gr) design[which(mm_groups == gr)[1],], ncol = ncol(design))
   if(any(table(mm_groups) < n_emb)){
-    problematic_mat <- cbind(n_occurrences = c(table(mm_groups)), reduced_design)
-    stop("Too few datapoints in some design matrix group.\n\n", glmGamPoi:::format_matrix(problematic_mat),
+    n_occur <- c(table(mm_groups))
+    sel_indices <- head(order(n_occur), n = 4)
+    problematic_mat <- cbind(n_occurrences = n_occur[sel_indices], reduced_design[sel_indices,,drop=FALSE])
+    stop("Too few datapoints in some design matrix group.\nIf a covariate is continuous, ",
+         "please discretize it into an (ordered) factor.\nIf for one factor level there are too few cells, consider removing ",
+         "that factor level or merging it with another.\n\n", glmGamPoi:::format_matrix(problematic_mat),
          "\nEach row must occurr at least n_embedding=", n_emb, " times.\n")
   }
   group_planes <- lapply(groups, \(gr) pca(data[,mm_groups == gr,drop=FALSE], n = n_emb, center = FALSE)$coordsystem)
